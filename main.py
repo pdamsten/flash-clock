@@ -45,30 +45,37 @@ def main():
     initDisplay()
     initWidgets()
 
-    pminutes = -1
-    pday = -1
-    phour = -1
+    pdate = datetime.now()
     while True:
-        print(rtc.RTC().datetime)
-        if pday != rtc.RTC().datetime.tm_mday:
-            pday = rtc.RTC().datetime.tm_mday
-            print('Updating date & ntp')
-            updateTime()
-            print('**', datetime.now())
-            print('**', isEUDst(datetime.now()))
-            lblDate.text = formatDate()
-        if phour != rtc.RTC().datetime.tm_hour:
-            phour = rtc.RTC().datetime.tm_hour
-            print('Updating temperature')
-            temp = getTemp()
-            print('**', temp)
-            lblTemp.text = formatTemp(temp)
-            lblTemp.color = 0x88BBFF if temp < 0 else 0xFF6B0D
-        if pminutes != rtc.RTC().datetime.tm_min:
-            pminutes = rtc.RTC().datetime.tm_min
-            print('Updating time')
-            lblTime.text = formatTime()
+        d = datetime.now()
+        try:
+            if pdate.day != d.day():
+                daily()
+            if pdate.hour != d.hour:
+                hourly()
+            if pdate.minutes != pdate.minutes:
+                minutes()
+        except Exception as e:
+            print("loop failed", str(e))
+        pdate = d
         time.sleep(0.5)
+
+def daily():
+    print('Updating date & ntp')
+    updateTime()
+    print('**', datetime.now())
+    lblDate.text = formatDate()
+
+def hourly():
+    print('Updating temperature')
+    temp = getTemp()
+    print('**', temp)
+    lblTemp.text = formatTemp(temp)
+    lblTemp.color = 0x88BBFF if temp < 0 else 0xFF6B0D
+
+def minutes():
+    print('Updating time')
+    lblTime.text = formatTime()
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)

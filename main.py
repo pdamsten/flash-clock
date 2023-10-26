@@ -45,33 +45,54 @@ def main():
     initDisplay()
     initWidgets()
 
-    pdate = datetime.now()
+    pdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
     while True:
         d = datetime.now()
-        try:
-            if pdate.day != d.day():
+        if pdate.day != d.day:
+            try:
                 daily()
-            if pdate.hour != d.hour:
+            except Exception as e:
+                print("daily failed", str(e))
+        if pdate.hour != d.hour:
+            try:
                 hourly()
-            if pdate.minutes != pdate.minutes:
+            except Exception as e:
+                print("hourly failed", str(e))
+        if pdate.minute != d.minute:
+            try:
                 minutes()
-        except Exception as e:
-            print("loop failed", str(e))
+            except Exception as e:
+                print("minutes failed", str(e))
         pdate = d
-        time.sleep(0.5)
+        sleep()
+
+def guard(tid, atleastsec):
+    global TICK, ticks
+    if tid in ticks:
+        if atleastsec > (ticks['current'] - ticks[tid]) * TICK:
+            return False
+    ticks[tid] = ticks['current']
+    return True
+    
+def sleep():
+    global TICK, ticks
+    ticks['current'] += 1
+    time.sleep(TICK)
 
 def daily():
     print('Updating date & ntp')
-    updateTime()
+    if guard('time', 3600):
+        updateTime()
     print('**', datetime.now())
     lblDate.text = formatDate()
 
 def hourly():
-    print('Updating temperature')
-    temp = getTemp()
-    print('**', temp)
-    lblTemp.text = formatTemp(temp)
-    lblTemp.color = 0x88BBFF if temp < 0 else 0xFF6B0D
+    if guard('temp', 1800):
+        print('Updating temperature')
+        temp = getTemp()
+        print('**', temp)
+        lblTemp.text = formatTemp(temp)
+        lblTemp.color = 0x88BBFF if temp < 0 else 0xFF6B0D
 
 def minutes():
     print('Updating time')
@@ -168,6 +189,8 @@ CS = board.GP18
 BIGFONT = bitmap_font.load_font('fonts/F5.6-Regular-44.bdf')
 ORANGEFONT = bitmap_font.load_font('fonts/F5.6-Regular-30.bdf')
 SMALLFONT = bitmap_font.load_font('fonts/F5.6-Regular-14.bdf')
+TICK = 0.5
+ticks = {'current': 0}
 
 display = None 
 lblTime = None

@@ -117,13 +117,16 @@ def formatDate():
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
 def connectWifi():    
-    global pool
+    if DEBUG:
+        return
     try:
         wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
     except Exception as e:
         print('Wifi failed', str(e))
 
 def getTemp():
+    if DEBUG:
+        return 0.0
     lat = os.getenv("WEATHER_LATITUDE") 
     lon = os.getenv("WEATHER_LONGITUDE")
     url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + \
@@ -148,7 +151,7 @@ def initDisplay():
     displayio.release_displays()
     spi = busio.SPI(clock = SCK, MOSI = SDA)
     dbus = displayio.FourWire(spi, command = AO, chip_select = CS, reset = RESET)
-    display = ST7735R(dbus, width = 160, height = 128, rotation = 270, bgr = True)
+    display = ST7735R(dbus, width = 160, height = 128, rotation = 90, bgr = True)
 
 def addImage(group, bitmap):
     bmp = displayio.TileGrid(bitmap, pixel_shader = bitmap.pixel_shader)
@@ -172,6 +175,8 @@ def initWidgets():
     display.show(group)
 
 def updateTime():
+    if DEBUG:
+        return
     try:
         pool = socketpool.SocketPool(wifi.radio)
         ntp = adafruit_ntp.NTP(pool, tz_offset = int(os.getenv("TIME_OFFSET")))
@@ -186,11 +191,13 @@ SDA = board.GP11
 AO = board.GP16
 RESET = board.GP17
 CS = board.GP18
-BIGFONT = bitmap_font.load_font('fonts/F5.6-Regular-44.bdf')
-ORANGEFONT = bitmap_font.load_font('fonts/F5.6-Regular-30.bdf')
-SMALLFONT = bitmap_font.load_font('fonts/F5.6-Regular-14.bdf')
+BIGFONT = bitmap_font.load_font('fonts/camera_lens-52.bdf')
+ORANGEFONT = bitmap_font.load_font('fonts/camera_lens-30.bdf')
+SMALLFONT = bitmap_font.load_font('fonts/camera_lens-18.bdf')
 TICK = 0.5
 ticks = {'current': 0}
+
+DEBUG = True
 
 display = None 
 lblTime = None

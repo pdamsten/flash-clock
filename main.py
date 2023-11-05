@@ -22,9 +22,13 @@
 #
 #**************************************************************************
 
+import gc
+print('0', gc.mem_free())
+import displayio
+import adafruit_imageload
+from adafruit_st7735r import ST7735R
 import board
 import busio
-import displayio
 import socketpool
 import wifi
 import rtc
@@ -33,16 +37,21 @@ import time
 import ssl
 import adafruit_requests
 import adafruit_ntp
-from adafruit_st7735r import ST7735R
 from adafruit_datetime import datetime, timedelta
-import adafruit_imageload
 
 def main():
-    global display, lblTime, lblDate, lblTemp
+    global display
 
+    print('a', gc.mem_free())
     connectWifi()
+    print('b', gc.mem_free())
     initDisplay()
+    print('c', gc.mem_free())
+    loadBitmapFonts()
+    print('d', gc.mem_free())
     initWidgets()
+    print('e', gc.mem_free())
+    background()
 
     pdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
     while True:
@@ -83,7 +92,7 @@ def daily():
     if guard('time', 3600):
         updateTime()
     print('**', datetime.now())
-    lblDate.text = formatDate()
+    setText(lblDate, 'lens_20', formatDate())
 
 def hourly():
     if guard('temp', 1800):
@@ -95,7 +104,7 @@ def hourly():
 
 def minutes():
     print('Updating time')
-    lblTime.text = formatTime()
+    setText(lblTime, 'lens_50', formatTime())
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)
@@ -109,7 +118,7 @@ def formatTemp(temp):
 
 def formatTime():
     date = datetime.now()
-    return f'{(date.hour + isEUDst(date)):0=2}:{date.minute:0=2}'
+    return f'{(date.hour + isEUDst(date)):0=2}{date.minute:0=2}'
 
 def formatDate():
     date = datetime.now()
@@ -152,14 +161,27 @@ def initDisplay():
     dbus = displayio.FourWire(spi, command = AO, chip_select = CS, reset = RESET)
     display = ST7735R(dbus, width = 160, height = 128, rotation = 90, bgr = True)
 
-def addImage(group, bitmap):
+def background():
+    group = displayio.Group()
+    b = displayio.OnDiskBitmap('images/display.bmp')
+    bmp = displayio.TileGrid(b, pixel_shader = b.pixel_shader)
+    group.append(bmp)
+    display.show(group)
+
+def addImage(group, bitmap, x = None, y = None):
     bmp = displayio.TileGrid(bitmap, pixel_shader = bitmap.pixel_shader)
     group.append(bmp)
+    if x:
+        bmp.x = x
+    if y:
+        bmp.y = y
     return bmp
 
 def loadBitmapFonts():
     global fonts
+
     for key in fonts:
+        print(gc.mem_free())
         bmp, palette = adafruit_imageload.load(fonts[key]['file'], bitmap = displayio.Bitmap, 
                                                palette = displayio.Palette)
         palette.make_transparent(0)
@@ -178,6 +200,7 @@ def addChar(group, font, char, x, y):
 
 def setChar(chGrid, font, char, x = None, y = None):
     global fonts
+
     chGrid[0, 0] = fonts[font]['chars'].index(char)
     if x:
         chGrid.x = x
@@ -201,14 +224,11 @@ def setText(grids, font, txt, x, y, spacing = 1.2):
 
 def initWidgets():
     global lblTime, lblDate, lblTemp
-    loadBitmapFonts()
+    gc.collect()
     group = displayio.Group()
-    addImage(group, displayio.OnDiskBitmap('images/display.bmp'))
-    #lblTime = addTextOld(group, '--:--', BIGFONT, 80, 3)
+    lblTime = addText(group, 'lens_50', '0000', 10, 3)
+    lblDate = addText(group, 'lens_20', '00.00.00', 5, 100)
     #lblTemp = addTextOld(group, '00', ORANGEFONT, 0, 99, 0xFF6B0D, 0.0, 0.0)
-
-    txt = addText(group, 'lens_20', '01.01.20', 5, 100)
-    setText(txt, 'lens_20', '01.01.23', 50, 103)
 
     display.show(group)
 
@@ -230,13 +250,27 @@ AO = board.GP16
 RESET = board.GP17
 CS = board.GP18
 fonts = {
+    'lens_50': {
+        'file': 'fonts/camera_lens_font_50.bmp', 
+        'size': 50,
+        'chars': '0123456789',
+        'chsize': [638 / 20, 348 / 20, 647 / 20, 622 / 20, 662 / 20, 638 / 20, 628 / 20, 676 / 20, 
+                   638 / 20, 638 / 20]
+    },
+    'lens_30': {
+        'file': 'fonts/camera_lens_font_30.bmp', 
+        'size': 30,
+        'chars': '0123456789-+',
+        'chsize': [638 / 33.3, 348 / 33.3, 647 / 33.3, 622 / 33.3, 662 / 33.3, 638 / 33.3, 
+                   628 / 33.3, 676 / 33.3, 638 / 33.3, 638 / 33.3, 718 / 33.3, 718 / 33.3]
+    },
     'lens_20': {
         'file': 'fonts/camera_lens_font_20.bmp', 
         'size': 20,
-        'chars': '0123456789:.-O',
+        'chars': '0123456789.',
         'chsize': [638 / 50, 348 / 50, 647 / 50, 622 / 50, 662 / 50, 638 / 50, 628 / 50, 676 / 50, 
-                638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]
-    }
+                   638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]
+    },
 }
 TICK = 0.5
 ticks = {'current': 0}

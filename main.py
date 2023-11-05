@@ -31,8 +31,6 @@ import rtc
 import os
 import time
 import ssl
-from adafruit_bitmap_font import bitmap_font
-from adafruit_display_text import label
 import adafruit_requests
 import adafruit_ntp
 from adafruit_st7735r import ST7735R
@@ -159,13 +157,6 @@ def addImage(group, bitmap):
     group.append(bmp)
     return bmp
 
-def addTextOld(group, txt, font, x, y, color = 0xFFFFFF, ax = 0.5, ay = 0.0):
-    text = label.Label(font, text = txt, color = color)
-    text.anchor_point = (ax, ay)
-    text.anchored_position = (x, y)
-    group.append(text)
-    return text
-
 def loadBitmapFonts():
     global fonts
     for key in fonts:
@@ -213,8 +204,8 @@ def initWidgets():
     loadBitmapFonts()
     group = displayio.Group()
     addImage(group, displayio.OnDiskBitmap('images/display.bmp'))
-    lblTime = addTextOld(group, '--:--', BIGFONT, 80, 3)
-    lblTemp = addTextOld(group, '00', ORANGEFONT, 0, 99, 0xFF6B0D, 0.0, 0.0)
+    #lblTime = addTextOld(group, '--:--', BIGFONT, 80, 3)
+    #lblTemp = addTextOld(group, '00', ORANGEFONT, 0, 99, 0xFF6B0D, 0.0, 0.0)
 
     txt = addText(group, 'lens_20', '01.01.20', 5, 100)
     setText(txt, 'lens_20', '01.01.23', 50, 103)
@@ -238,9 +229,6 @@ SDA = board.GP11
 AO = board.GP16
 RESET = board.GP17
 CS = board.GP18
-BIGFONT = bitmap_font.load_font('fonts/camera_lens-52.bdf')
-ORANGEFONT = bitmap_font.load_font('fonts/camera_lens-30.bdf')
-SMALLFONT = bitmap_font.load_font('fonts/camera_lens-18.bdf')
 fonts = {
     'lens_20': {
         'file': 'fonts/camera_lens_font_20.bmp', 

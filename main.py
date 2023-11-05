@@ -37,6 +37,7 @@ import adafruit_requests
 import adafruit_ntp
 from adafruit_st7735r import ST7735R
 from adafruit_datetime import datetime, timedelta
+import adafruit_imageload
 
 def main():
     global display, lblTime, lblDate, lblTemp
@@ -158,20 +159,66 @@ def addImage(group, bitmap):
     group.append(bmp)
     return bmp
 
-def addText(group, txt, font, x, y, color = 0xFFFFFF, ax = 0.5, ay = 0.0):
+def addTextOld(group, txt, font, x, y, color = 0xFFFFFF, ax = 0.5, ay = 0.0):
     text = label.Label(font, text = txt, color = color)
     text.anchor_point = (ax, ay)
     text.anchored_position = (x, y)
     group.append(text)
     return text
 
+def loadBitmapFonts():
+    global fonts
+    for key in fonts:
+        bmp, palette = adafruit_imageload.load(fonts[key]['file'], bitmap = displayio.Bitmap, 
+                                               palette = displayio.Palette)
+        palette.make_transparent(0)
+        fonts[key]['bmp'] = bmp
+        fonts[key]['palette'] = palette
+
+def addChar(group, font, char, x, y):
+    global fonts
+    char_grid = displayio.TileGrid(fonts[font]['bmp'], pixel_shader = fonts[font]['palette'], 
+                                   width = 1, height = 1,
+                                   tile_width = fonts[font]['size'], 
+                                   tile_height = fonts[font]['size'], default_tile = 0)
+    group.append(char_grid)
+    setChar(char_grid, font, char, x, y)
+    return char_grid
+
+def setChar(chGrid, font, char, x = None, y = None):
+    global fonts
+    chGrid[0, 0] = fonts[font]['chars'].index(char)
+    if x:
+        chGrid.x = x
+    if y:
+        chGrid.y = y
+
+def addText(group, font, txt, x, y, spacing = 1.2):
+    global fonts
+    grids = []
+    for ch in txt:
+        grids.append(addChar(group, font, ch, int(x), y))
+        i = fonts[font]['chars'].index(ch)
+        x += fonts[font]['chsize'][i] * spacing
+    return grids
+
+def setText(grids, font, txt, x, y, spacing = 1.2):
+    for n, g in enumerate(grids):
+        i = fonts[font]['chars'].index(txt[n])
+        setChar(g, font, txt[n], int(x), y)
+        x += fonts[font]['chsize'][i] * spacing
+
 def initWidgets():
     global lblTime, lblDate, lblTemp
+    loadBitmapFonts()
     group = displayio.Group()
     addImage(group, displayio.OnDiskBitmap('images/display.bmp'))
-    lblTime = addText(group, '--:--', BIGFONT, 80, 3)
-    lblDate = addText(group, '--.--.--', SMALLFONT, 94, 112)
-    lblTemp = addText(group, '00', ORANGEFONT, 0, 99, 0xFF6B0D, 0.0, 0.0)
+    lblTime = addTextOld(group, '--:--', BIGFONT, 80, 3)
+    lblTemp = addTextOld(group, '00', ORANGEFONT, 0, 99, 0xFF6B0D, 0.0, 0.0)
+
+    txt = addText(group, 'lens_20', '01.01.20', 5, 100)
+    setText(txt, 'lens_20', '01.01.23', 50, 103)
+
     display.show(group)
 
 def updateTime():
@@ -194,8 +241,18 @@ CS = board.GP18
 BIGFONT = bitmap_font.load_font('fonts/camera_lens-52.bdf')
 ORANGEFONT = bitmap_font.load_font('fonts/camera_lens-30.bdf')
 SMALLFONT = bitmap_font.load_font('fonts/camera_lens-18.bdf')
+fonts = {
+    'lens_20': {
+        'file': 'fonts/camera_lens_font_20.bmp', 
+        'size': 20,
+        'chars': '0123456789:.-O',
+        'chsize': [638 / 50, 348 / 50, 647 / 50, 622 / 50, 662 / 50, 638 / 50, 628 / 50, 676 / 50, 
+                638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]
+    }
+}
 TICK = 0.5
 ticks = {'current': 0}
+
 
 DEBUG = True
 

@@ -23,9 +23,7 @@
 #**************************************************************************
 
 import gc
-print('0', gc.mem_free())
 import displayio
-import adafruit_imageload
 from adafruit_st7735r import ST7735R
 import board
 import busio
@@ -42,16 +40,10 @@ from adafruit_datetime import datetime, timedelta
 def main():
     global display
 
-    print('a', gc.mem_free())
     connectWifi()
-    print('b', gc.mem_free())
     initDisplay()
-    print('c', gc.mem_free())
     loadBitmapFonts()
-    print('d', gc.mem_free())
     initWidgets()
-    print('e', gc.mem_free())
-    background()
 
     pdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
     while True:
@@ -92,19 +84,19 @@ def daily():
     if guard('time', 3600):
         updateTime()
     print('**', datetime.now())
-    setText(lblDate, 'lens_20', formatDate())
+    setText(lblDate, 'lens_20', formatDate(), 50, 100)
 
 def hourly():
     if guard('temp', 1800):
         print('Updating temperature')
         temp = getTemp()
         print('**', temp)
-        lblTemp.text = formatTemp(temp)
-        lblTemp.color = 0x88BBFF if temp < 0 else 0xFF6B0D
+        setText(lblTemp, 'lens_30', formatTemp(temp), 0, 94)
+    setText(lblTimeH, 'lens_50', formatTime()[:2], 0, 3)
 
 def minutes():
     print('Updating time')
-    setText(lblTime, 'lens_50', formatTime())
+    setText(lblTimeM, 'lens_50', formatTime()[2:], 90, 3)
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)
@@ -161,12 +153,10 @@ def initDisplay():
     dbus = displayio.FourWire(spi, command = AO, chip_select = CS, reset = RESET)
     display = ST7735R(dbus, width = 160, height = 128, rotation = 90, bgr = True)
 
-def background():
-    group = displayio.Group()
+def background(group):
     b = displayio.OnDiskBitmap('images/display.bmp')
     bmp = displayio.TileGrid(b, pixel_shader = b.pixel_shader)
     group.append(bmp)
-    display.show(group)
 
 def addImage(group, bitmap, x = None, y = None):
     bmp = displayio.TileGrid(bitmap, pixel_shader = bitmap.pixel_shader)
@@ -181,16 +171,13 @@ def loadBitmapFonts():
     global fonts
 
     for key in fonts:
-        print(gc.mem_free())
-        bmp, palette = adafruit_imageload.load(fonts[key]['file'], bitmap = displayio.Bitmap, 
-                                               palette = displayio.Palette)
-        palette.make_transparent(0)
-        fonts[key]['bmp'] = bmp
-        fonts[key]['palette'] = palette
+        fonts[key]['bmp'] = displayio.OnDiskBitmap(fonts[key]['file'])
+        fonts[key]['bmp'].pixel_shader.make_transparent(0)
 
 def addChar(group, font, char, x, y):
     global fonts
-    char_grid = displayio.TileGrid(fonts[font]['bmp'], pixel_shader = fonts[font]['palette'], 
+    char_grid = displayio.TileGrid(fonts[font]['bmp'], 
+                                   pixel_shader = fonts[font]['bmp'].pixel_shader, 
                                    width = 1, height = 1,
                                    tile_width = fonts[font]['size'], 
                                    tile_height = fonts[font]['size'], default_tile = 0)
@@ -223,12 +210,14 @@ def setText(grids, font, txt, x, y, spacing = 1.2):
         x += fonts[font]['chsize'][i] * spacing
 
 def initWidgets():
-    global lblTime, lblDate, lblTemp
+    global lblTimeH, lblTimeM, lblDate, lblTemp
     gc.collect()
     group = displayio.Group()
-    lblTime = addText(group, 'lens_50', '0000', 10, 3)
-    lblDate = addText(group, 'lens_20', '00.00.00', 5, 100)
-    #lblTemp = addTextOld(group, '00', ORANGEFONT, 0, 99, 0xFF6B0D, 0.0, 0.0)
+    background(group)
+    lblTimeH = addText(group, 'lens_50', '00', 0, 3)
+    lblTimeM = addText(group, 'lens_50', '00', 90, 3)
+    lblDate = addText(group, 'lens_20', '00.00.00', 20, 100)
+    lblTemp = addText(group, 'lens_30', '00', 0, 94)
 
     display.show(group)
 
@@ -276,10 +265,11 @@ TICK = 0.5
 ticks = {'current': 0}
 
 
-DEBUG = True
+DEBUG = False
 
 display = None 
-lblTime = None
+lblTimeH = None
+lblTimeM = None
 lblDate = None
 lblTemp = None
 

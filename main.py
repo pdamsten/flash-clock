@@ -40,7 +40,6 @@ from adafruit_datetime import datetime, timedelta
 def main():
     global display
 
-    connectWifi()
     initDisplay()
     loadBitmapFonts()
     initWidgets()
@@ -116,11 +115,12 @@ def formatDate():
     date = datetime.now()
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
-def connectWifi():    
+def checkWifi():    
     if DEBUG:
         return
     try:
-        wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
+        if not wifi.radio.connected:
+            wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
     except Exception as e:
         print('Wifi failed', str(e))
 
@@ -136,6 +136,7 @@ def getTemp():
 
 def getJson(url):
     data = {}
+    checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
         requests = adafruit_requests.Session(pool, ssl.create_default_context())
@@ -246,6 +247,7 @@ def initWidgets():
 def updateTime():
     if DEBUG:
         return
+    checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
         ntp = adafruit_ntp.NTP(pool, tz_offset = int(os.getenv("TIME_OFFSET")))

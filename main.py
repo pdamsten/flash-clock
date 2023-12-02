@@ -91,6 +91,7 @@ def hourly():
         temp = getTemp()
         print('**', temp)
         setText(lblTemp, formatTemp(temp))
+        setText(lblDot, '+' if temp >= 0.0 else '-')
     setText(lblTimeH, formatTime()[:2])
 
 def minutes():
@@ -201,6 +202,7 @@ def textSize(label, txt):
     for ch in txt:
         i = fonts[label['font']]['chars'].index(ch)
         w += fonts[label['font']]['chsize'][i] * label['spacing']
+    w -= label['spacing']
     return (w, h)
 
 def addText(group, font, txt, x, y, spacing = 1.2):
@@ -232,7 +234,7 @@ def setText(label, txt):
         x += fonts[label['font']]['chsize'][i] * label['spacing']
 
 def initWidgets():
-    global lblTimeH, lblTimeM, lblDate, lblTemp
+    global lblTimeH, lblTimeM, lblDate, lblTemp, lblDot
     gc.collect()
     group = displayio.Group()
     background(group)
@@ -241,6 +243,8 @@ def initWidgets():
     lblDate = addText(group, 'lens_20', '00.00.00', 
                       ('C', SCREEN_WIDTH / 2), ('B', SCREEN_HEIGHT - MARGIN))
     lblTemp = addText(group, 'lens_30', '00', MARGIN, ('B', SCREEN_HEIGHT - MARGIN))
+    lblDot = addText(group, 'lens_30', '+', 
+                     ('R', SCREEN_WIDTH - MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
 
     display.show(group)
 

@@ -88,7 +88,8 @@ def daily():
     if guard('time', 3600):
         updateTime()
     print('**', datetime.now())
-    setText(lblDate, formatDate())
+    if SHOWDATE:
+        setText(lblDate, formatDate())
 
 def hourly():
     if guard('temp', 1800):
@@ -122,8 +123,8 @@ def formatDate():
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
 def error_code(code):
-    if int(os.getenv('SHOW_ERROR_CODES')) == 1:
-        setText(lblDate, f'{code:0=2}')
+    if SHOWERROR == 1:
+        setText(lblDate, f'  {code:0=3}   ')
 
 def checkWifi():    
     if DEBUG:
@@ -146,7 +147,7 @@ def checkWifi():
 
 def getTemp():
     if DEBUG:
-        return 0.0
+        return 28.0
     lat = os.getenv("WEATHER_LATITUDE") 
     lon = os.getenv("WEATHER_LONGITUDE")
     url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + \
@@ -267,9 +268,10 @@ def initWidgets():
     background(group)
     lblTimeH = addText(group, 'lens_50', '00', ('R', SCREEN_WIDTH / 2 - 10), MARGIN)
     lblTimeM = addText(group, 'lens_50', '00', ('L', SCREEN_WIDTH / 2 + 10), MARGIN)
-    lblDate = addText(group, 'lens_17', '00.00.00', 
+    lblDate = addText(group, 'lens_17', '        ', 
                       ('C', SCREEN_WIDTH / 2 + 10), ('B', SCREEN_HEIGHT - MARGIN - 6))
-    lblTemp = addText(group, 'lens_30', '00', ('R', 40 + MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
+    x = ('R', 40 + MARGIN) if SHOWDATE else ('L', 2 * MARGIN)
+    lblTemp = addText(group, 'lens_30', '00', x, ('B', SCREEN_HEIGHT - MARGIN))
     lblDot = addText(group, 'lens_30', '+', 
                      ('R', SCREEN_WIDTH - MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
 
@@ -277,6 +279,7 @@ def initWidgets():
 
 def updateTime():
     if DEBUG:
+        rtc.RTC().datetime = datetime(2020, 3, 27, 19, 10, 0, 0)
         return
     checkWifi()
     try:
@@ -314,30 +317,23 @@ fonts = {
         'chsize': [638 / 33.3, 348 / 33.3, 647 / 33.3, 622 / 33.3, 662 / 33.3, 638 / 33.3, 
                    628 / 33.3, 676 / 33.3, 638 / 33.3, 638 / 33.3, 718 / 33.3, 718 / 33.3]
     },
-    'lens_20': {
-        'file': 'fonts/camera_lens_font_20.bmp', 
-        'size': 20,
-        'spacing': 1.1,
-        'chars': '0123456789.',
-        'chsize': [638 / 50, 348 / 50, 647 / 50, 622 / 50, 662 / 50, 638 / 50, 628 / 50, 676 / 50, 
-                   638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]
-    },
     'lens_17': {
         'file': 'fonts/camera_lens_font_17.bmp', 
         'size': 17,
         'spacing': 1.1,
-        'chars': '0123456789.',
+        'chars': '0123456789. ',
         'chsize': [638 / (1000/17), 348 / (1000/17), 647 / (1000/17), 622 / (1000/17), 
                    662 / (1000/17), 638 / (1000/17), 628 / (1000/17), 676 / (1000/17), 
-                   638 / (1000/17), 638 / (1000/17), 152 / (1000/17), 151 / (1000/17), 
-                   595 / (1000/17), 1000 / (1000/17)]
+                   638 / (1000/17), 638 / (1000/17), 152 / (1000/17), 500 / (1000/17)]
     },
 }
 
 TICK = 0.5
 ticks = {'current': 0}
 
-DEBUG = False
+DEBUG = os.getenv('DEBUG')
+SHOWDATE = (int(os.getenv('SHOWDATE')) == 1)
+SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES')) ==1)
 
 display = None 
 lblTimeH = None

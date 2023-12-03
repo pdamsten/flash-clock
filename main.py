@@ -53,16 +53,19 @@ def main():
                 daily()
             except Exception as e:
                 print("daily failed", str(e))
+                error_code(201)
         if pdate.hour != d.hour:
             try:
                 hourly()
             except Exception as e:
                 print("hourly failed", str(e))
+                error_code(202)
         if pdate.minute != d.minute:
             try:
                 minutes()
             except Exception as e:
                 print("minutes failed", str(e))
+                error_code(203)
         pdate = d
         sleep()
 
@@ -118,6 +121,9 @@ def formatDate():
     date = datetime.now()
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
+def error_code(code):
+    setText(lblDate, f'{code:0=2}')
+
 def checkWifi():    
     if DEBUG:
         return
@@ -127,11 +133,13 @@ def checkWifi():
                 wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
         except Exception as e:
             print('Wifi failed', str(e))
+            error_code(300 + i +1)
             time.sleep(i * 10 + 0.5)
 
     if not wifi.radio.connected:
-        print("Resetting clock in 2 seconds")
-        time.sleep(2)
+        print("Resetting clock in 5 seconds")
+        error_code(401)
+        time.sleep(5)
         microcontroller.reset()
 
 def getTemp():
@@ -154,6 +162,7 @@ def getJson(url):
         data = response.json()
         response.close()
     except Exception as e:
+        error_code(501)
         print("json failed", str(e))
     return data
 
@@ -267,6 +276,7 @@ def updateTime():
         ntp = adafruit_ntp.NTP(pool, tz_offset = int(os.getenv("TIME_OFFSET")))
         rtc.RTC().datetime = ntp.datetime
     except Exception as e:
+        error_code(601)
         print("ntp failed", str(e))
 
 # globals

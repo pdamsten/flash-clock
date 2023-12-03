@@ -130,8 +130,9 @@ def checkWifi():
         return
     for i in range(5):
         try:
-            if not wifi.radio.connected:
-                wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
+            if wifi.radio.connected:
+                break
+            wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
         except Exception as e:
             print('Wifi failed', str(e))
             error_code(300 + i +1)

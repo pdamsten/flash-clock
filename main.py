@@ -36,6 +36,7 @@ import ssl
 import adafruit_requests
 import adafruit_ntp
 from adafruit_datetime import datetime, timedelta
+import microcontroller
 
 def main():
     global display
@@ -120,11 +121,18 @@ def formatDate():
 def checkWifi():    
     if DEBUG:
         return
-    try:
-        if not wifi.radio.connected:
-            wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
-    except Exception as e:
-        print('Wifi failed', str(e))
+    for i in range(5):
+        try:
+            if not wifi.radio.connected:
+                wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
+        except Exception as e:
+            print('Wifi failed', str(e))
+            time.sleep(i * 10 + 0.5)
+
+    if not wifi.radio.connected:
+        print("Resetting clock in 2 seconds")
+        time.sleep(2)
+        microcontroller.reset()
 
 def getTemp():
     if DEBUG:

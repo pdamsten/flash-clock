@@ -242,9 +242,9 @@ def initWidgets():
     background(group)
     lblTimeH = addText(group, 'lens_50', '00', ('R', SCREEN_WIDTH / 2 - 10), MARGIN)
     lblTimeM = addText(group, 'lens_50', '00', ('L', SCREEN_WIDTH / 2 + 10), MARGIN)
-    lblDate = addText(group, 'lens_20', '00.00.00', 
-                      ('C', SCREEN_WIDTH / 2 + 10), ('B', SCREEN_HEIGHT - MARGIN- 5))
-    lblTemp = addText(group, 'lens_30', '00', MARGIN, ('B', SCREEN_HEIGHT - MARGIN))
+    lblDate = addText(group, 'lens_17', '00.00.00', 
+                      ('C', SCREEN_WIDTH / 2 + 10), ('B', SCREEN_HEIGHT - MARGIN - 6))
+    lblTemp = addText(group, 'lens_30', '00', ('R', 40 + MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
     lblDot = addText(group, 'lens_30', '+', 
                      ('R', SCREEN_WIDTH - MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
 
@@ -283,7 +283,7 @@ fonts = {
     'lens_30': {
         'file': 'fonts/camera_lens_font_30.bmp', 
         'size': 30,
-        'spacing': 1.1,
+        'spacing': 1.2,
         'chars': '0123456789-+',
         'chsize': [638 / 33.3, 348 / 33.3, 647 / 33.3, 622 / 33.3, 662 / 33.3, 638 / 33.3, 
                    628 / 33.3, 676 / 33.3, 638 / 33.3, 638 / 33.3, 718 / 33.3, 718 / 33.3]
@@ -296,12 +296,22 @@ fonts = {
         'chsize': [638 / 50, 348 / 50, 647 / 50, 622 / 50, 662 / 50, 638 / 50, 628 / 50, 676 / 50, 
                    638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]
     },
+    'lens_17': {
+        'file': 'fonts/camera_lens_font_17.bmp', 
+        'size': 17,
+        'spacing': 1.1,
+        'chars': '0123456789.',
+        'chsize': [638 / (1000/17), 348 / (1000/17), 647 / (1000/17), 622 / (1000/17), 
+                   662 / (1000/17), 638 / (1000/17), 628 / (1000/17), 676 / (1000/17), 
+                   638 / (1000/17), 638 / (1000/17), 152 / (1000/17), 151 / (1000/17), 
+                   595 / (1000/17), 1000 / (1000/17)]
+    },
 }
 
 TICK = 0.5
 ticks = {'current': 0}
 
-DEBUG = True
+DEBUG = False
 
 display = None 
 lblTimeH = None

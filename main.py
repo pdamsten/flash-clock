@@ -220,10 +220,13 @@ def textSize(label, txt):
     h = fonts[label['font']]['size']
     for n, ch in enumerate(txt):
         i = fonts[label['font']]['chars'].index(ch)
+        size = fonts[label['font']]['chsize'][i] 
+        spacing = size[1] if isinstance(size, tuple) else fonts[label['font']]['spacing']
+        size = size[0] if isinstance(size, tuple) else size
         if n < len(txt) - 1:
-            w += fonts[label['font']]['chsize'][i] * fonts[label['font']]['spacing']
+            w += size * spacing
         else:
-            w += fonts[label['font']]['chsize'][i]
+            w += size
     return (w, h)
 
 def addText(group, font, txt, x, y):
@@ -251,7 +254,10 @@ def setText(label, txt):
     for n, g in enumerate(label['grids']):
         i = fonts[label['font']]['chars'].index(txt[n])
         setChar(g, label['font'], txt[n], x, y)
-        x += fonts[label['font']]['chsize'][i] * fonts[label['font']]['spacing']
+        size = fonts[label['font']]['chsize'][i] 
+        spacing = size[1] if isinstance(size, tuple) else fonts[label['font']]['spacing']
+        size = size[0] if isinstance(size, tuple) else size
+        x += size * spacing
 
 def initWidgets():
     global lblTimeH, lblTimeM, lblDate, lblTemp, lblDot
@@ -296,8 +302,8 @@ fonts = {
         'size': 50,
         'spacing': 1.1,
         'chars': '0123456789',
-        'chsize': [638 / 20, 348 / 20, 647 / 20, 622 / 20, 662 / 20, 638 / 20, 628 / 20, 676 / 20, 
-                   638 / 20, 638 / 20]
+        'chsize': [638 / 20, (348 / 20, 1.3), 647 / 20, 622 / 20, 662 / 20, 638 / 20, 
+                   628 / 20, 676 / 20, 638 / 20, 638 / 20]
     },
     'lens_30': {
         'file': 'fonts/camera_lens_font_30.bmp', 

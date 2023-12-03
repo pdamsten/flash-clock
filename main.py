@@ -203,13 +203,12 @@ def textSize(label, txt):
     for n, ch in enumerate(txt):
         i = fonts[label['font']]['chars'].index(ch)
         if n < len(txt) - 1:
-            w += fonts[label['font']]['chsize'][i] * label['spacing']
+            w += fonts[label['font']]['chsize'][i] * fonts[label['font']]['spacing']
         else:
             w += fonts[label['font']]['chsize'][i]
-    w -= label['spacing']
     return (w, h)
 
-def addText(group, font, txt, x, y, spacing = 1.2):
+def addText(group, font, txt, x, y):
     global fonts
     label = {}
     label['grids'] = []
@@ -217,7 +216,6 @@ def addText(group, font, txt, x, y, spacing = 1.2):
     x = x if isinstance(x, tuple) else ('L', x)
     y = y if isinstance(y, tuple) else ('L', y)
     label['pos'] = (x, y)
-    label['spacing'] = spacing
     for ch in txt:
         label['grids'].append(addChar(group, font))
     setText(label, txt)
@@ -235,7 +233,7 @@ def setText(label, txt):
     for n, g in enumerate(label['grids']):
         i = fonts[label['font']]['chars'].index(txt[n])
         setChar(g, label['font'], txt[n], x, y)
-        x += fonts[label['font']]['chsize'][i] * label['spacing']
+        x += fonts[label['font']]['chsize'][i] * fonts[label['font']]['spacing']
 
 def initWidgets():
     global lblTimeH, lblTimeM, lblDate, lblTemp, lblDot
@@ -245,7 +243,7 @@ def initWidgets():
     lblTimeH = addText(group, 'lens_50', '00', ('R', SCREEN_WIDTH / 2 - 10), MARGIN)
     lblTimeM = addText(group, 'lens_50', '00', ('L', SCREEN_WIDTH / 2 + 10), MARGIN)
     lblDate = addText(group, 'lens_20', '00.00.00', 
-                      ('C', SCREEN_WIDTH / 2), ('B', SCREEN_HEIGHT - MARGIN))
+                      ('C', SCREEN_WIDTH / 2 + 10), ('B', SCREEN_HEIGHT - MARGIN- 5))
     lblTemp = addText(group, 'lens_30', '00', MARGIN, ('B', SCREEN_HEIGHT - MARGIN))
     lblDot = addText(group, 'lens_30', '+', 
                      ('R', SCREEN_WIDTH - MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
@@ -277,6 +275,7 @@ fonts = {
     'lens_50': {
         'file': 'fonts/camera_lens_font_50.bmp', 
         'size': 50,
+        'spacing': 1.1,
         'chars': '0123456789',
         'chsize': [638 / 20, 348 / 20, 647 / 20, 622 / 20, 662 / 20, 638 / 20, 628 / 20, 676 / 20, 
                    638 / 20, 638 / 20]
@@ -284,6 +283,7 @@ fonts = {
     'lens_30': {
         'file': 'fonts/camera_lens_font_30.bmp', 
         'size': 30,
+        'spacing': 1.1,
         'chars': '0123456789-+',
         'chsize': [638 / 33.3, 348 / 33.3, 647 / 33.3, 622 / 33.3, 662 / 33.3, 638 / 33.3, 
                    628 / 33.3, 676 / 33.3, 638 / 33.3, 638 / 33.3, 718 / 33.3, 718 / 33.3]
@@ -291,6 +291,7 @@ fonts = {
     'lens_20': {
         'file': 'fonts/camera_lens_font_20.bmp', 
         'size': 20,
+        'spacing': 1.1,
         'chars': '0123456789.',
         'chsize': [638 / 50, 348 / 50, 647 / 50, 622 / 50, 662 / 50, 638 / 50, 628 / 50, 676 / 50, 
                    638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]

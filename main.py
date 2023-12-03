@@ -40,7 +40,6 @@ from adafruit_datetime import datetime, timedelta
 def main():
     global display
 
-    connectWifi()
     initDisplay()
     loadBitmapFonts()
     initWidgets()
@@ -85,19 +84,20 @@ def daily():
     if guard('time', 3600):
         updateTime()
     print('**', datetime.now())
-    setText(lblDate, 'lens_20', formatDate(), 50, 100)
+    setText(lblDate, formatDate())
 
 def hourly():
     if guard('temp', 1800):
         print('Updating temperature')
         temp = getTemp()
         print('**', temp)
-        setText(lblTemp, 'lens_30', formatTemp(temp), 0, 94)
-    setText(lblTimeH, 'lens_50', formatTime()[:2], 0, 3)
+        setText(lblTemp, formatTemp(temp))
+        setText(lblDot, '+' if temp >= 0.0 else '-')
+    setText(lblTimeH, formatTime()[:2])
 
 def minutes():
     print('Updating time')
-    setText(lblTimeM, 'lens_50', formatTime()[2:], 90, 3)
+    setText(lblTimeM, formatTime()[2:])
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)
@@ -117,11 +117,12 @@ def formatDate():
     date = datetime.now()
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
-def connectWifi():    
+def checkWifi():    
     if DEBUG:
         return
     try:
-        wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
+        if not wifi.radio.connected:
+            wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
     except Exception as e:
         print('Wifi failed', str(e))
 
@@ -137,6 +138,7 @@ def getTemp():
 
 def getJson(url):
     data = {}
+    checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
         requests = adafruit_requests.Session(pool, ssl.create_default_context())
@@ -175,7 +177,7 @@ def loadBitmapFonts():
         fonts[key]['bmp'] = displayio.OnDiskBitmap(fonts[key]['file'])
         fonts[key]['bmp'].pixel_shader.make_transparent(0)
 
-def addChar(group, font, char, x, y):
+def addChar(group, font):
     global fonts
     char_grid = displayio.TileGrid(fonts[font]['bmp'], 
                                    pixel_shader = fonts[font]['bmp'].pixel_shader, 
@@ -183,7 +185,6 @@ def addChar(group, font, char, x, y):
                                    tile_width = fonts[font]['size'], 
                                    tile_height = fonts[font]['size'], default_tile = 0)
     group.append(char_grid)
-    setChar(char_grid, font, char, x, y)
     return char_grid
 
 def setChar(chGrid, font, char, x = None, y = None):
@@ -195,36 +196,63 @@ def setChar(chGrid, font, char, x = None, y = None):
     if y:
         chGrid.y = y
 
+def textSize(label, txt):
+    global fonts
+    w = 0
+    h = fonts[label['font']]['size']
+    for ch in txt:
+        i = fonts[label['font']]['chars'].index(ch)
+        w += fonts[label['font']]['chsize'][i] * label['spacing']
+    w -= label['spacing']
+    return (w, h)
+
 def addText(group, font, txt, x, y, spacing = 1.2):
     global fonts
-    grids = []
+    label = {}
+    label['grids'] = []
+    label['font'] = font
+    x = ('L', x) if isinstance(x, int) else x
+    y = ('L', y) if isinstance(y, int) else y
+    label['pos'] = (x, y)
+    label['spacing'] = spacing
     for ch in txt:
-        grids.append(addChar(group, font, ch, int(x), y))
-        i = fonts[font]['chars'].index(ch)
-        x += fonts[font]['chsize'][i] * spacing
-    return grids
+        label['grids'].append(addChar(group, font))
+    setText(label, txt)
+    return label
 
-def setText(grids, font, txt, x, y, spacing = 1.2):
-    for n, g in enumerate(grids):
-        i = fonts[font]['chars'].index(txt[n])
-        setChar(g, font, txt[n], int(x), y)
-        x += fonts[font]['chsize'][i] * spacing
+def setText(label, txt):
+    size = textSize(label, txt)
+    x = label['pos'][0][1]
+    y = label['pos'][1][1]
+    x -= size[0] if label['pos'][0][0] == 'R' else 0
+    x -= int(size[0] / 2) if label['pos'][0][0] == 'C' else 0
+    y -= size[1] if label['pos'][1][0] == 'B' else 0
+    y -= int(size[1] / 2) if label['pos'][1][0] == 'M' else 0
+
+    for n, g in enumerate(label['grids']):
+        i = fonts[label['font']]['chars'].index(txt[n])
+        setChar(g, label['font'], txt[n], x, y)
+        x += fonts[label['font']]['chsize'][i] * label['spacing']
 
 def initWidgets():
-    global lblTimeH, lblTimeM, lblDate, lblTemp
+    global lblTimeH, lblTimeM, lblDate, lblTemp, lblDot
     gc.collect()
     group = displayio.Group()
     background(group)
-    lblTimeH = addText(group, 'lens_50', '00', 0, 3)
-    lblTimeM = addText(group, 'lens_50', '00', 90, 3)
-    lblDate = addText(group, 'lens_20', '00.00.00', 20, 100)
-    lblTemp = addText(group, 'lens_30', '00', 0, 94)
+    lblTimeH = addText(group, 'lens_50', '00', ('R', SCREEN_WIDTH / 2 - 10), MARGIN)
+    lblTimeM = addText(group, 'lens_50', '00', ('L', SCREEN_WIDTH / 2 + 10), MARGIN)
+    lblDate = addText(group, 'lens_20', '00.00.00', 
+                      ('C', SCREEN_WIDTH / 2), ('B', SCREEN_HEIGHT - MARGIN))
+    lblTemp = addText(group, 'lens_30', '00', MARGIN, ('B', SCREEN_HEIGHT - MARGIN))
+    lblDot = addText(group, 'lens_30', '+', 
+                     ('R', SCREEN_WIDTH - MARGIN), ('B', SCREEN_HEIGHT - MARGIN))
 
     display.show(group)
 
 def updateTime():
     if DEBUG:
         return
+    checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
         ntp = adafruit_ntp.NTP(pool, tz_offset = int(os.getenv("TIME_OFFSET")))
@@ -233,6 +261,9 @@ def updateTime():
         print("ntp failed", str(e))
 
 # globals
+SCREEN_WIDTH = 160
+SCREEN_HEIGHT = 128
+MARGIN = 3
 
 SCK = board.GP10
 SDA = board.GP11

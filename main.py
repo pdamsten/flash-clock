@@ -78,6 +78,7 @@ def sleep():
     global TICK, ticks
     ticks['current'] += 1
     time.sleep(TICK)
+    print('.', end = '')
 
 def daily():
     print('Updating date & ntp')

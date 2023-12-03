@@ -192,9 +192,9 @@ def setChar(chGrid, font, char, x = None, y = None):
 
     chGrid[0, 0] = fonts[font]['chars'].index(char)
     if x:
-        chGrid.x = x
+        chGrid.x = int(x)
     if y:
-        chGrid.y = y
+        chGrid.y = int(y)
 
 def textSize(label, txt):
     global fonts
@@ -211,8 +211,8 @@ def addText(group, font, txt, x, y, spacing = 1.2):
     label = {}
     label['grids'] = []
     label['font'] = font
-    x = ('L', x) if isinstance(x, int) else x
-    y = ('L', y) if isinstance(y, int) else y
+    x = x if isinstance(x, tuple) else ('L', x)
+    y = y if isinstance(y, tuple) else ('L', y)
     label['pos'] = (x, y)
     label['spacing'] = spacing
     for ch in txt:
@@ -225,9 +225,9 @@ def setText(label, txt):
     x = label['pos'][0][1]
     y = label['pos'][1][1]
     x -= size[0] if label['pos'][0][0] == 'R' else 0
-    x -= int(size[0] / 2) if label['pos'][0][0] == 'C' else 0
+    x -= size[0] / 2 if label['pos'][0][0] == 'C' else 0
     y -= size[1] if label['pos'][1][0] == 'B' else 0
-    y -= int(size[1] / 2) if label['pos'][1][0] == 'M' else 0
+    y -= size[1] / 2 if label['pos'][1][0] == 'M' else 0
 
     for n, g in enumerate(label['grids']):
         i = fonts[label['font']]['chars'].index(txt[n])
@@ -293,11 +293,11 @@ fonts = {
                    638 / 50, 638 / 50, 152 / 50, 151 / 50, 595 / 50, 1000 / 50]
     },
 }
+
 TICK = 0.5
 ticks = {'current': 0}
 
-
-DEBUG = False
+DEBUG = True
 
 display = None 
 lblTimeH = None

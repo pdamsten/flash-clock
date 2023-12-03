@@ -200,9 +200,12 @@ def textSize(label, txt):
     global fonts
     w = 0
     h = fonts[label['font']]['size']
-    for ch in txt:
+    for n, ch in enumerate(txt):
         i = fonts[label['font']]['chars'].index(ch)
-        w += fonts[label['font']]['chsize'][i] * label['spacing']
+        if n < len(txt) - 1:
+            w += fonts[label['font']]['chsize'][i] * label['spacing']
+        else:
+            w += fonts[label['font']]['chsize'][i]
     w -= label['spacing']
     return (w, h)
 

@@ -122,7 +122,7 @@ def formatDate():
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
 def error_code(code):
-    if os.getenv('SHOW_ERROR_CODES') == 1:
+    if int(os.getenv('SHOW_ERROR_CODES')) == 1:
         setText(lblDate, f'{code:0=2}')
 
 def checkWifi():    

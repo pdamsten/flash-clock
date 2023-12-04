@@ -185,23 +185,23 @@ def initDisplay():
     dbus = displayio.FourWire(spi, command = AO, chip_select = CS, reset = RESET)
     display = ST7735R(dbus, width = 160, height = 128, rotation = 90, bgr = True)
 
-def color(clr):
+def color(clr, extra = 1.0):
     b = clr % 256
     g = (clr >> 8) % 256
     r = (clr >> 16)
 
-    r *= (BRIGHTNESS / 100.0)
-    g *= (BRIGHTNESS / 100.0) * 0.9
-    b *= (BRIGHTNESS / 100.0) * 0.8
+    r *= (BRIGHTNESS / 100.0) * extra
+    g *= (BRIGHTNESS / 100.0) * 0.8 * extra
+    b *= (BRIGHTNESS / 100.0) * 0.7 * extra
 
     return (int(r) << 16 | int(g) << 8 | int(b))
 
-def dimPalette(org):
+def dimPalette(org, extra = 1.0):
     if BRIGHTNESS == 100:
         return org
     palette = displayio.Palette(len(org))
     for c in range(len(org)):
-        palette[c] = color(org[c])
+        palette[c] = color(org[c], extra)
     return palette
 
 def background(group):
@@ -214,7 +214,7 @@ def loadBitmapFonts():
 
     for key in fonts:
         fonts[key]['bmp'] = displayio.OnDiskBitmap(fonts[key]['file'])
-        fonts[key]['palette'] = dimPalette(fonts[key]['bmp'].pixel_shader)
+        fonts[key]['palette'] = dimPalette(fonts[key]['bmp'].pixel_shader, fonts[key]['dimextra'])
         fonts[key]['palette'].make_transparent(0)
 
 def addChar(group, font):
@@ -325,6 +325,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_50.bmp', 
         'size': 50,
         'spacing': 1.1,
+        'dimextra': 0.8,
         'chars': '0123456789',
         'chsize': [638 / 20, (348 / 20, 1.3), 647 / 20, 622 / 20, 662 / 20, 638 / 20, 
                    628 / 20, 676 / 20, 638 / 20, 638 / 20]
@@ -333,6 +334,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_30.bmp', 
         'size': 30,
         'spacing': 1.2,
+        'dimextra': 1.0,
         'chars': '0123456789-+',
         'chsize': [638 / 33.3, 348 / 33.3, 647 / 33.3, 622 / 33.3, 662 / 33.3, 638 / 33.3, 
                    628 / 33.3, 676 / 33.3, 638 / 33.3, 638 / 33.3, 718 / 33.3, 718 / 33.3]
@@ -341,6 +343,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_17.bmp', 
         'size': 17,
         'spacing': 1.1,
+        'dimextra': 1.0,
         'chars': '0123456789. ',
         'chsize': [638 / (1000/17), 348 / (1000/17), 647 / (1000/17), 622 / (1000/17), 
                    662 / (1000/17), 638 / (1000/17), 628 / (1000/17), 676 / (1000/17), 

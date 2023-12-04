@@ -174,31 +174,42 @@ def initDisplay():
     dbus = displayio.FourWire(spi, command = AO, chip_select = CS, reset = RESET)
     display = ST7735R(dbus, width = 160, height = 128, rotation = 90, bgr = True)
 
+def color(clr):
+    b = clr % 256
+    g = (clr >> 8) % 256
+    r = (clr >> 16)
+
+    r *= (BRIGHTNESS / 100.0)
+    g *= (BRIGHTNESS / 100.0) * 0.9
+    b *= (BRIGHTNESS / 100.0) * 0.8
+
+    return (int(r) << 16 | int(g) << 8 | int(b))
+
+def dimPalette(org):
+    if BRIGHTNESS == 100:
+        return org
+    palette = displayio.Palette(len(org))
+    for c in range(len(org)):
+        palette[c] = color(org[c])
+    return palette
+
 def background(group):
     b = displayio.OnDiskBitmap('images/display.bmp')
-    bmp = displayio.TileGrid(b, pixel_shader = b.pixel_shader)
+    bmp = displayio.TileGrid(b, pixel_shader = dimPalette(b.pixel_shader))
     group.append(bmp)
-
-def addImage(group, bitmap, x = None, y = None):
-    bmp = displayio.TileGrid(bitmap, pixel_shader = bitmap.pixel_shader)
-    group.append(bmp)
-    if x:
-        bmp.x = x
-    if y:
-        bmp.y = y
-    return bmp
 
 def loadBitmapFonts():
     global fonts
 
     for key in fonts:
         fonts[key]['bmp'] = displayio.OnDiskBitmap(fonts[key]['file'])
-        fonts[key]['bmp'].pixel_shader.make_transparent(0)
+        fonts[key]['palette'] = dimPalette(fonts[key]['bmp'].pixel_shader)
+        fonts[key]['palette'].make_transparent(0)
 
 def addChar(group, font):
     global fonts
     char_grid = displayio.TileGrid(fonts[font]['bmp'], 
-                                   pixel_shader = fonts[font]['bmp'].pixel_shader, 
+                                   pixel_shader = fonts[font]['palette'], 
                                    width = 1, height = 1,
                                    tile_width = fonts[font]['size'], 
                                    tile_height = fonts[font]['size'], default_tile = 0)
@@ -277,7 +288,7 @@ def initWidgets():
 
 def updateTime():
     if DEBUG:
-        rtc.RTC().datetime = datetime(2020, 3, 27, 19, 10, 0, 0)
+        rtc.RTC().datetime = time.struct_time((2020, 3, 27, 19, 10, 0, 0, -1, -1))
         return
     checkWifi()
     try:
@@ -337,6 +348,7 @@ WIFI_PASSWORD = os.getenv('WIFI_PASSWORD', '')
 LATITUDE = os.getenv('WEATHER_LATITUDE', 51.4934)
 LONGITUDE = os.getenv('WEATHER_LONGITUDE', 0)
 TIME_OFFSET = int(os.getenv('TIME_OFFSET', 0))
+BRIGHTNESS = int(os.getenv('BRIGHTNESS', 100))
 
 display = None 
 lblTimeH = None

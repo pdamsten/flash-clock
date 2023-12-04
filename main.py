@@ -133,7 +133,7 @@ def checkWifi():
         try:
             if wifi.radio.connected:
                 break
-            wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
+            wifi.radio.connect(WIFI_SSID, WIFI_PASSWORD)
         except Exception as e:
             print('Wifi failed', str(e))
             error_code(300 + i +1)
@@ -148,10 +148,8 @@ def checkWifi():
 def getTemp():
     if DEBUG:
         return 28.0
-    lat = os.getenv("WEATHER_LATITUDE") 
-    lon = os.getenv("WEATHER_LONGITUDE")
-    url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + \
-          '&current=temperature_2m'
+    url = 'https://api.open-meteo.com/v1/forecast?latitude=' + \
+           LATITUDE + '&longitude=' + LONGITUDE + '&current=temperature_2m'
     data = getJson(url)
     return data['current']['temperature_2m']
 
@@ -284,7 +282,7 @@ def updateTime():
     checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
-        ntp = adafruit_ntp.NTP(pool, tz_offset = int(os.getenv("TIME_OFFSET")))
+        ntp = adafruit_ntp.NTP(pool, tz_offset = TIME_OFFSET)
         rtc.RTC().datetime = ntp.datetime
     except Exception as e:
         error_code(601)
@@ -331,9 +329,14 @@ fonts = {
 TICK = 0.5
 ticks = {'current': 0}
 
-DEBUG = os.getenv('DEBUG')
-SHOWDATE = (int(os.getenv('SHOWDATE')) == 1)
-SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES')) ==1)
+DEBUG = (int(os.getenv('DEBUG', 0)) == 1)
+SHOWDATE = (int(os.getenv('SHOWDATE'), 1) == 1)
+SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES'), 0) ==1)
+WIFI_SSID = os.getenv('WIFI_SSID', '')
+WIFI_PASSWORD = os.getenv('WIFI_PASSWORD', '')
+LATITUDE = os.getenv('WEATHER_LATITUDE', 51.4934)
+LONGITUDE = os.getenv('WEATHER_LONGITUDE', 0)
+TIME_OFFSET = int(os.getenv('TIME_OFFSET', 0))
 
 display = None 
 lblTimeH = None

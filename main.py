@@ -30,7 +30,7 @@ import busio
 import socketpool
 import wifi
 import rtc
-import os
+import os, sys
 import time
 import ssl
 import adafruit_requests
@@ -39,7 +39,7 @@ from adafruit_datetime import datetime, timedelta
 import microcontroller
 
 def main():
-    global display
+    global display, keep_error
 
     initDisplay()
     loadBitmapFonts()
@@ -47,6 +47,8 @@ def main():
 
     pdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
     while True:
+        if guard('error', keep_error):
+            clear_error()
         d = datetime.now()
         if pdate.day != d.day:
             try:
@@ -122,9 +124,18 @@ def formatDate():
     date = datetime.now()
     return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
-def error_code(code):
+def error_code(code, keep = 12 * 60 *60):
+    global keep_error, ticks
     if SHOWERROR == 1:
         setText(lblDate, f'  {code:0=3}   ')
+        keep_error = keep
+        ticks['error'] = ticks['current']
+
+def clear_error():
+    global keep_error
+    if SHOWERROR == 1:
+        setText(lblDate, f'        ')
+        keep_error = sys.maxsize
 
 def checkWifi():    
     if DEBUG:
@@ -136,7 +147,7 @@ def checkWifi():
             wifi.radio.connect(WIFI_SSID, WIFI_PASSWORD)
         except Exception as e:
             print('Wifi failed', str(e))
-            error_code(300 + i +1)
+            error_code(300 + i + 1, i * 3600 + 30)
             time.sleep(i * 10 + 0.5)
 
     if not wifi.radio.connected:
@@ -339,6 +350,7 @@ fonts = {
 
 TICK = 0.5
 ticks = {'current': 0}
+keep_error = 0
 
 DEBUG = (int(os.getenv('DEBUG', 0)) == 1)
 SHOWDATE = (int(os.getenv('SHOWDATE', 1)) == 1)

@@ -191,8 +191,8 @@ def color(clr, extra = 1.0):
     r = (clr >> 16)
 
     r *= (BRIGHTNESS / 100.0) * extra
-    g *= (BRIGHTNESS / 100.0) * 0.8 * extra
-    b *= (BRIGHTNESS / 100.0) * 0.7 * extra
+    g *= (BRIGHTNESS / 100.0) * 0.85 * extra
+    b *= (BRIGHTNESS / 100.0) * 0.65 * extra
 
     return (int(r) << 16 | int(g) << 8 | int(b))
 
@@ -325,7 +325,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_50.bmp', 
         'size': 50,
         'spacing': 1.1,
-        'dimextra': 0.8,
+        'dimextra': 0.9,
         'chars': '0123456789',
         'chsize': [638 / 20, (348 / 20, 1.3), 647 / 20, 622 / 20, 662 / 20, 638 / 20, 
                    628 / 20, 676 / 20, 638 / 20, 638 / 20]

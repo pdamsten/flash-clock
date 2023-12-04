@@ -330,8 +330,8 @@ TICK = 0.5
 ticks = {'current': 0}
 
 DEBUG = (int(os.getenv('DEBUG', 0)) == 1)
-SHOWDATE = (int(os.getenv('SHOWDATE'), 1) == 1)
-SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES'), 0) ==1)
+SHOWDATE = (int(os.getenv('SHOWDATE', 1)) == 1)
+SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES', 0)) ==1)
 WIFI_SSID = os.getenv('WIFI_SSID', '')
 WIFI_PASSWORD = os.getenv('WIFI_PASSWORD', '')
 LATITUDE = os.getenv('WEATHER_LATITUDE', 51.4934)

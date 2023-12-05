@@ -62,12 +62,18 @@ def main():
             except Exception as e:
                 print("hourly failed", str(e))
                 error_code(202)
+        if fifteens(pdate) != fifteens(d):
+            try:
+                fifteen()
+            except Exception as e:
+                print("fifteens failed", str(e))
+                error_code(203)
         if pdate.minute != d.minute:
             try:
                 minutes()
             except Exception as e:
                 print("minutes failed", str(e))
-                error_code(203)
+                error_code(204)
         pdate = d
         sleep()
 
@@ -94,17 +100,22 @@ def daily():
         setText(lblDate, formatDate())
 
 def hourly():
-    if guard('temp', 1800):
-        print('Updating temperature')
-        temp = getTemp()
-        print('**', temp)
-        setText(lblTemp, formatTemp(temp))
-        setText(lblDot, '+' if temp >= 0.0 else '-')
     setText(lblTimeH, formatTime()[:2])
 
 def minutes():
     print('Updating time')
     setText(lblTimeM, formatTime()[2:])
+
+def fifteens(d):
+    return d.hour * 4 + int(d.minute / 15)
+
+def fifteen():
+    if guard('temp', 5 * 60):
+        print('Updating temperature')
+        temp = getTemp()
+        print('**', temp)
+        setText(lblTemp, formatTemp(temp))
+        setText(lblDot, '+' if temp >= 0.0 else '-')
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)

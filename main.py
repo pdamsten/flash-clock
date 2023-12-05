@@ -336,7 +336,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_50.bmp', 
         'size': 50,
         'spacing': 1.1,
-        'dimextra': 0.9,
+        'dimextra': 0.8,
         'chars': '0123456789',
         'chsize': [638 / 20, (348 / 20, 1.3), 647 / 20, 622 / 20, 662 / 20, 638 / 20, 
                    628 / 20, 676 / 20, 638 / 20, 638 / 20]

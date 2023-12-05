@@ -129,7 +129,7 @@ def error_code(code, keep = 12 * 60 *60):
     if SHOWERROR == 1:
         setText(lblDate, f'  {code:0=3}   ')
         keep_error = keep
-        ticks['error'] = ticks['current']
+        guard('error', RESET)
 
 def clear_error():
     global keep_error
@@ -351,6 +351,7 @@ fonts = {
     },
 }
 
+RESET = 0
 TICK = 0.5
 ticks = {'current': 0}
 keep_error = 0

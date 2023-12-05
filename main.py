@@ -62,18 +62,18 @@ def main():
             except Exception as e:
                 print("hourly failed", str(e))
                 error_code(202)
-        if fifteens(pdate) != fifteens(d):
-            try:
-                fifteen()
-            except Exception as e:
-                print("fifteens failed", str(e))
-                error_code(203)
         if pdate.minute != d.minute:
             try:
                 minutes()
             except Exception as e:
                 print("minutes failed", str(e))
                 error_code(204)
+        if fifteens(pdate) != fifteens(d):
+            try:
+                fifteen()
+            except Exception as e:
+                print("fifteens failed", str(e))
+                error_code(203)
         pdate = d
         sleep()
 
@@ -103,7 +103,6 @@ def hourly():
     setText(lblTimeH, formatTime()[:2])
 
 def minutes():
-    print('Updating time')
     setText(lblTimeM, formatTime()[2:])
 
 def fifteens(d):

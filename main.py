@@ -117,7 +117,7 @@ def now():
     return f'{(date.hour + isEUDst(date)):0=2}{date.minute:0=2}'
 
 def hours():
-    setText(lblTimeH, f'{now().hour():0=2}')
+    setText(lblTimeH, f'{now().hour:0=2}')
     return True
 
 def minutes():
@@ -179,7 +179,6 @@ def getJson(url):
         data = response.json()
         response.close()
     except Exception as e:
-        error_code(501)
         print("json failed", str(e))
     return data
 
@@ -382,5 +381,3 @@ lblDate = None
 lblTemp = None
 
 main()
-
-

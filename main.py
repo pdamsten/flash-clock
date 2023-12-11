@@ -46,17 +46,15 @@ def main():
     initWidgets()
 
     jobs = [
-        {'interval': HOUR_CHANGE, 'job': hours, 'fail': 0, 'failed': 0, 
-         'max_fail': 0, 'error_code': 101, 'last': sys.maxsize},
-        {'interval': MIN_CHANGE, 'job': minutes, 'fail': 0, 'failed': 0, 
-         'max_fail': 0, 'error_code': 102, 'last': sys.maxsize},
-        {'interval': DAY_CHANGE, 'job': date, 'fail': 0, 'failed': 0, 
-         'max_fail': 0, 'error_code': 301, 'last': sys.maxsize},
-        {'interval': 24*60*60, 'job': ntp, 'fail': 60, 'failed': 0, 
-         'max_fail': 3, 'error_code': 401, 'last': sys.maxsize},
-        {'interval': 20*60, 'job': temperature, 'fail': 20*60, 'failed': 0, 
-         'max_fail': 3, 'error_code': 501, 'last': sys.maxsize},
+        {'interval': HOUR_CHANGE, 'job': hours, 'fail': 0, 'max_fail': 0, 'error_code': 101},
+        {'interval': MIN_CHANGE, 'job': minutes, 'fail': 0, 'max_fail': 0, 'error_code': 102},
+        {'interval': DAY_CHANGE, 'job': date, 'fail': 0, 'max_fail': 0, 'error_code': 103},
+        {'interval': 24*60*60, 'job': ntp, 'fail': 60, 'max_fail': 3, 'error_code': 401},
+        {'interval': 20*60, 'job': temperature, 'fail': 20*60, 'max_fail': 3, 'error_code': 501},
     ]
+    for job in jobs:
+        job['last'] =  sys.maxsize
+        job['failed'] = 0
 
     lastdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
     while True:

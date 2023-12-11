@@ -39,8 +39,6 @@ from adafruit_datetime import datetime, timedelta
 import microcontroller
 
 def main():
-    global TICK, ticks
-
     initDisplay()
     loadBitmapFonts()
     initWidgets()
@@ -67,7 +65,7 @@ def main():
                     run = True
             else:
                 t = job['interval'] if job['failed'] == 0 else job['fail']
-                if job['last'] + t > ticks / TICK:
+                if job['last'] + t > ticks_in_seconds():
                     run = True
             if run:
                 try:
@@ -84,10 +82,15 @@ def main():
                 else:  
                     job['failed'] = 0
                     clear_error(job['error_code'])
-            job['last'] = ticks / TICK        
+
+                job['last'] = ticks_in_seconds()        
                     
         lastdate = now
         sleep()
+
+def ticks_in_seconds():
+    global TICK, ticks
+    return ticks / TICK
 
 def sleep():
     global TICK, ticks

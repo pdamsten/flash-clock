@@ -30,7 +30,7 @@ import busio
 import socketpool
 import wifi
 import rtc
-import os
+import os, sys
 import time
 import ssl
 import adafruit_requests
@@ -47,15 +47,15 @@ def main():
 
     jobs = [
         {'interval': HOUR_CHANGE, 'job': hours, 'fail': 0, 'failed': 0, 
-         'max_fail': 0, 'error_code': 101, 'last': None},
+         'max_fail': 0, 'error_code': 101, 'last': sys.maxsize},
         {'interval': MIN_CHANGE, 'job': minutes, 'fail': 0, 'failed': 0, 
-         'max_fail': 0, 'error_code': 102, 'last': None},
+         'max_fail': 0, 'error_code': 102, 'last': sys.maxsize},
         {'interval': DAY_CHANGE, 'job': date, 'fail': 0, 'failed': 0, 
-         'max_fail': 0, 'error_code': 301, 'last': None},
+         'max_fail': 0, 'error_code': 301, 'last': sys.maxsize},
         {'interval': 24*60*60, 'job': ntp, 'fail': 60, 'failed': 0, 
-         'max_fail': 3, 'error_code': 401, 'last': None},
+         'max_fail': 3, 'error_code': 401, 'last': sys.maxsize},
         {'interval': 20*60, 'job': temperature, 'fail': 20*60, 'failed': 0, 
-         'max_fail': 3, 'error_code': 501, 'last': None},
+         'max_fail': 3, 'error_code': 501, 'last': sys.maxsize},
     ]
 
     lastdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
@@ -128,6 +128,10 @@ def error_code(code):
     if SHOWERROR == 1:
         setText(lblDate, f'  {code:0=3}   ')
 
+def clear_error():
+    if SHOWERROR == 1:
+        setText(lblDate, f'        ')
+
 def checkWifi():    
     if DEBUG:
         return
@@ -135,10 +139,10 @@ def checkWifi():
         try:
             if wifi.radio.connected:
                 break
-            wifi.radio.connect(os.getenv("WIFI_SSID"), os.getenv("WIFI_PASSWORD"))
+            wifi.radio.connect(WIFI_SSID, WIFI_PASSWORD)
         except Exception as e:
             print('Wifi failed', str(e))
-            error_code(300 + i +1)
+            error_code(300 + i + 1, i * 3600 + 30)
             time.sleep(i * 10 + 0.5)
 
     if not wifi.radio.connected:
@@ -150,10 +154,8 @@ def checkWifi():
 def getTemp():
     if DEBUG:
         return 28.0
-    lat = os.getenv("WEATHER_LATITUDE") 
-    lon = os.getenv("WEATHER_LONGITUDE")
-    url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon + \
-          '&current=temperature_2m'
+    url = 'https://api.open-meteo.com/v1/forecast?latitude=' + \
+           LATITUDE + '&longitude=' + LONGITUDE + '&current=temperature_2m'
     data = getJson(url)
     return data['current']['temperature_2m']
 
@@ -178,31 +180,42 @@ def initDisplay():
     dbus = displayio.FourWire(spi, command = AO, chip_select = CS, reset = RESET)
     display = ST7735R(dbus, width = 160, height = 128, rotation = 90, bgr = True)
 
+def color(clr, extra = 1.0):
+    b = clr % 256
+    g = (clr >> 8) % 256
+    r = (clr >> 16)
+
+    r *= (BRIGHTNESS / 100.0) * extra
+    g *= (BRIGHTNESS / 100.0) * 0.85 * extra
+    b *= (BRIGHTNESS / 100.0) * 0.65 * extra
+
+    return (int(r) << 16 | int(g) << 8 | int(b))
+
+def dimPalette(org, extra = 1.0):
+    if BRIGHTNESS == 100:
+        return org
+    palette = displayio.Palette(len(org))
+    for c in range(len(org)):
+        palette[c] = color(org[c], extra)
+    return palette
+
 def background(group):
     b = displayio.OnDiskBitmap('images/display.bmp')
-    bmp = displayio.TileGrid(b, pixel_shader = b.pixel_shader)
+    bmp = displayio.TileGrid(b, pixel_shader = dimPalette(b.pixel_shader))
     group.append(bmp)
-
-def addImage(group, bitmap, x = None, y = None):
-    bmp = displayio.TileGrid(bitmap, pixel_shader = bitmap.pixel_shader)
-    group.append(bmp)
-    if x:
-        bmp.x = x
-    if y:
-        bmp.y = y
-    return bmp
 
 def loadBitmapFonts():
     global fonts
 
     for key in fonts:
         fonts[key]['bmp'] = displayio.OnDiskBitmap(fonts[key]['file'])
-        fonts[key]['bmp'].pixel_shader.make_transparent(0)
+        fonts[key]['palette'] = dimPalette(fonts[key]['bmp'].pixel_shader, fonts[key]['dimextra'])
+        fonts[key]['palette'].make_transparent(0)
 
 def addChar(group, font):
     global fonts
     char_grid = displayio.TileGrid(fonts[font]['bmp'], 
-                                   pixel_shader = fonts[font]['bmp'].pixel_shader, 
+                                   pixel_shader = fonts[font]['palette'], 
                                    width = 1, height = 1,
                                    tile_width = fonts[font]['size'], 
                                    tile_height = fonts[font]['size'], default_tile = 0)
@@ -281,12 +294,12 @@ def initWidgets():
 
 def ntp():
     if DEBUG:
-        rtc.RTC().datetime = datetime(2020, 3, 27, 19, 10, 0, 0)
+        rtc.RTC().datetime = time.struct_time((2020, 3, 27, 19, 10, 0, 0, -1, -1))
         return
     checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
-        ntp = adafruit_ntp.NTP(pool, tz_offset = int(os.getenv("TIME_OFFSET")))
+        ntp = adafruit_ntp.NTP(pool, tz_offset = TIME_OFFSET)
         rtc.RTC().datetime = ntp.datetime
     except Exception as e:
         error_code(601)
@@ -307,6 +320,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_50.bmp', 
         'size': 50,
         'spacing': 1.1,
+        'dimextra': 0.8,
         'chars': '0123456789',
         'chsize': [638 / 20, (348 / 20, 1.3), 647 / 20, 622 / 20, 662 / 20, 638 / 20, 
                    628 / 20, 676 / 20, 638 / 20, 638 / 20]
@@ -315,6 +329,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_30.bmp', 
         'size': 30,
         'spacing': 1.2,
+        'dimextra': 1.0,
         'chars': '0123456789-+',
         'chsize': [638 / 33.3, 348 / 33.3, 647 / 33.3, 622 / 33.3, 662 / 33.3, 638 / 33.3, 
                    628 / 33.3, 676 / 33.3, 638 / 33.3, 638 / 33.3, 718 / 33.3, 718 / 33.3]
@@ -323,6 +338,7 @@ fonts = {
         'file': 'fonts/camera_lens_font_17.bmp', 
         'size': 17,
         'spacing': 1.1,
+        'dimextra': 1.0,
         'chars': '0123456789. ',
         'chsize': [638 / (1000/17), 348 / (1000/17), 647 / (1000/17), 622 / (1000/17), 
                    662 / (1000/17), 638 / (1000/17), 628 / (1000/17), 676 / (1000/17), 
@@ -330,15 +346,22 @@ fonts = {
     },
 }
 
+RESET_TICKS = 0
 TICK = 0.5
 ticks = {'current': 0}
 HOUR_CHANGE = -3
 MIN_CHANGE = -4
 DAY_CHANGE = -2
 
-DEBUG = os.getenv('DEBUG')
-SHOWDATE = (int(os.getenv('SHOWDATE')) == 1)
-SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES')) ==1)
+DEBUG = (int(os.getenv('DEBUG', 0)) == 1)
+SHOWDATE = (int(os.getenv('SHOWDATE', 1)) == 1)
+SHOWERROR = (int(os.getenv('SHOW_ERROR_CODES', 0)) ==1)
+WIFI_SSID = os.getenv('WIFI_SSID', '')
+WIFI_PASSWORD = os.getenv('WIFI_PASSWORD', '')
+LATITUDE = os.getenv('WEATHER_LATITUDE', 51.4934)
+LONGITUDE = os.getenv('WEATHER_LONGITUDE', 0)
+TIME_OFFSET = int(os.getenv('TIME_OFFSET', 0))
+BRIGHTNESS = int(os.getenv('BRIGHTNESS', 100))
 
 display = None 
 lblTimeH = None

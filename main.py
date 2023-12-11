@@ -76,7 +76,7 @@ def main():
                     print('running job', job['job'].__name__)
                     res = job['job']()
                 except Exception as e:
-                    print("daily failed", str(e))  
+                    print("job failed", str(e))  
                     res = False
                 
                 if not res:
@@ -85,6 +85,7 @@ def main():
                        error_code(job['error_code']) 
                 else:  
                     job['failed'] = 0
+                    clear_error(job['error_code'])
             job['last'] = ticks / TICK        
                     
         lastdate = now
@@ -100,11 +101,13 @@ def date():
     if SHOWDATE:
         date = now()
         setText(lblDate, f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}')
+    return True
 
 def temperature():
     temp = getTemp()
     setText(lblTemp, f'{int(abs(round(temp, 0))):0=2}')
     setText(lblDot, '+' if temp >= 0.0 else '-')
+    return True
 
 def now():
     date = datetime.now() 
@@ -113,9 +116,11 @@ def now():
 
 def hours():
     setText(lblTimeH, f'{now().hour():0=2}')
+    return True
 
 def minutes():
     setText(lblTimeM, f'{now().minute:0=2}')
+    return True
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)
@@ -125,11 +130,14 @@ def isEUDst(date):
     return 1 if (date > dtstart and date < dtend) else 0
 
 def error_code(code):
+    global CURRENT_ERROR
     if SHOWERROR == 1:
         setText(lblDate, f'  {code:0=3}   ')
+        CURRENT_ERROR = code
 
-def clear_error():
-    if SHOWERROR == 1:
+def clear_error(code):
+    global CURRENT_ERROR
+    if SHOWERROR == 1 and CURRENT_ERROR == code:
         setText(lblDate, f'        ')
 
 def checkWifi():    
@@ -295,15 +303,17 @@ def initWidgets():
 def ntp():
     if DEBUG:
         rtc.RTC().datetime = time.struct_time((2020, 3, 27, 19, 10, 0, 0, -1, -1))
-        return
+        return True
     checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
         ntp = adafruit_ntp.NTP(pool, tz_offset = TIME_OFFSET)
         rtc.RTC().datetime = ntp.datetime
+        return True
     except Exception as e:
-        error_code(601)
         print("ntp failed", str(e))
+        return False
+
 
 # globals
 SCREEN_WIDTH = 160
@@ -346,7 +356,7 @@ fonts = {
     },
 }
 
-RESET_TICKS = 0
+CURRENT_ERROR = 0
 TICK = 0.5
 ticks = {'current': 0}
 HOUR_CHANGE = -3

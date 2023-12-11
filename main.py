@@ -39,70 +39,83 @@ from adafruit_datetime import datetime, timedelta
 import microcontroller
 
 def main():
-    global display
+    global TICK, ticks
 
     initDisplay()
     loadBitmapFonts()
     initWidgets()
 
-    pdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
+    jobs = [
+        {'interval': HOUR_CHANGE, 'job': hours, 'fail': 0, 'failed': 0, 
+         'max_fail': 0, 'error_code': 101, 'last': None},
+        {'interval': MIN_CHANGE, 'job': minutes, 'fail': 0, 'failed': 0, 
+         'max_fail': 0, 'error_code': 102, 'last': None},
+        {'interval': DAY_CHANGE, 'job': date, 'fail': 0, 'failed': 0, 
+         'max_fail': 0, 'error_code': 301, 'last': None},
+        {'interval': 24*60*60, 'job': ntp, 'fail': 60, 'failed': 0, 
+         'max_fail': 3, 'error_code': 401, 'last': None},
+        {'interval': 20*60, 'job': temperature, 'fail': 20*60, 'failed': 0, 
+         'max_fail': 3, 'error_code': 501, 'last': None},
+    ]
+
+    lastdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
     while True:
-        d = datetime.now()
-        if pdate.day != d.day:
-            try:
-                daily()
-            except Exception as e:
-                print("daily failed", str(e))
-                error_code(201)
-        if pdate.hour != d.hour:
-            try:
-                hourly()
-            except Exception as e:
-                print("hourly failed", str(e))
-                error_code(202)
-        if pdate.minute != d.minute:
-            try:
-                minutes()
-            except Exception as e:
-                print("minutes failed", str(e))
-                error_code(203)
-        pdate = d
+        now = datetime.now()
+        for job in jobs:
+            run = False
+            if job['interval'] < 0:
+                i = abs(job['interval'])
+                if lastdate[i] != now[i]:
+                    run = True
+            else:
+                t = job['interval'] if job['failed'] == 0 else job['fail']
+                if job['last'] + t > ticks / TICK:
+                    run = True
+            if run:
+                try:
+                    print('running job', job['job'].__name__)
+                    res = job['job']()
+                except Exception as e:
+                    print("daily failed", str(e))  
+                    res = False
+                
+                if not res:
+                    job['failed'] += 1
+                    if job['failed'] >= job['max_failed']:
+                       error_code(job['error_code']) 
+                else:  
+                    job['failed'] = 0
+            job['last'] = ticks / TICK        
+                    
+        lastdate = now
         sleep()
 
-def guard(tid, atleastsec):
-    global TICK, ticks
-    if tid in ticks:
-        if atleastsec > (ticks['current'] - ticks[tid]) * TICK:
-            return False
-    ticks[tid] = ticks['current']
-    return True
-    
 def sleep():
     global TICK, ticks
-    ticks['current'] += 1
+    ticks += 1
     time.sleep(TICK)
     print('.', end = '')
 
-def daily():
-    print('Updating date & ntp')
-    if guard('time', 3600):
-        updateTime()
-    print('**', datetime.now())
+def date():
     if SHOWDATE:
-        setText(lblDate, formatDate())
+        date = now()
+        setText(lblDate, f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}')
 
-def hourly():
-    if guard('temp', 1800):
-        print('Updating temperature')
-        temp = getTemp()
-        print('**', temp)
-        setText(lblTemp, formatTemp(temp))
-        setText(lblDot, '+' if temp >= 0.0 else '-')
-    setText(lblTimeH, formatTime()[:2])
+def temperature():
+    temp = getTemp()
+    setText(lblTemp, f'{int(abs(round(temp, 0))):0=2}')
+    setText(lblDot, '+' if temp >= 0.0 else '-')
+
+def now():
+    date = datetime.now() 
+    date += timedelta(hours = isEUDst(date))
+    return f'{(date.hour + isEUDst(date)):0=2}{date.minute:0=2}'
+
+def hours():
+    setText(lblTimeH, f'{now().hour():0=2}')
 
 def minutes():
-    print('Updating time')
-    setText(lblTimeM, formatTime()[2:])
+    setText(lblTimeM, f'{now().minute:0=2}')
 
 def isEUDst(date):
     dtstart = datetime(date.year, 3, 31, 3, 00)
@@ -110,17 +123,6 @@ def isEUDst(date):
     dtstart -= timedelta(days = (dtstart.weekday() + 1) % 7)
     dtend -= timedelta(days = (dtend.weekday() + 1) % 7)
     return 1 if (date > dtstart and date < dtend) else 0
-
-def formatTemp(temp):
-    return f'{int(abs(round(temp, 0))):0=2}'
-
-def formatTime():
-    date = datetime.now()
-    return f'{(date.hour + isEUDst(date)):0=2}{date.minute:0=2}'
-
-def formatDate():
-    date = datetime.now()
-    return f'{date.day:0=2}.{date.month:0=2}.{str(date.year)[-2:]}'
 
 def error_code(code):
     if SHOWERROR == 1:
@@ -277,7 +279,7 @@ def initWidgets():
 
     display.show(group)
 
-def updateTime():
+def ntp():
     if DEBUG:
         rtc.RTC().datetime = datetime(2020, 3, 27, 19, 10, 0, 0)
         return
@@ -330,6 +332,9 @@ fonts = {
 
 TICK = 0.5
 ticks = {'current': 0}
+HOUR_CHANGE = -3
+MIN_CHANGE = -4
+DAY_CHANGE = -2
 
 DEBUG = os.getenv('DEBUG')
 SHOWDATE = (int(os.getenv('SHOWDATE')) == 1)

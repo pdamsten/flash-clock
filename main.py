@@ -79,6 +79,7 @@ def main():
                     job['failed'] += 1
                     if job['failed'] >= job['max_failed']:
                        error_code(job['error_code']) 
+                       job['failed'] = 0
                 else:  
                     job['failed'] = 0
                     clear_error(job['error_code'])

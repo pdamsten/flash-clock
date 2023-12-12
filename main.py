@@ -44,14 +44,14 @@ def main():
     initWidgets()
 
     jobs = [
+        {'interval': 24*60*60, 'job': ntp, 'fail': 60, 'max_fail': 3, 'error_code': 401},
         {'interval': HOUR_CHANGE, 'job': hours, 'fail': 0, 'max_fail': 0, 'error_code': 101},
         {'interval': MIN_CHANGE, 'job': minutes, 'fail': 0, 'max_fail': 0, 'error_code': 102},
         {'interval': DAY_CHANGE, 'job': date, 'fail': 0, 'max_fail': 0, 'error_code': 103},
-        {'interval': 24*60*60, 'job': ntp, 'fail': 60, 'max_fail': 3, 'error_code': 401},
         {'interval': 20*60, 'job': temperature, 'fail': 20*60, 'max_fail': 3, 'error_code': 501},
     ]
     for job in jobs:
-        job['last'] =  sys.maxsize
+        job['last'] = -1 * sys.maxsize
         job['failed'] = 0
 
     lastdate = datetime.now() - timedelta(days = 1, minutes = 1, hours = 1)
@@ -61,15 +61,15 @@ def main():
             run = False
             if job['interval'] < 0:
                 i = abs(job['interval'])
-                if lastdate[i] != now[i]:
+                if lastdate.timetuple()[i] != now.timetuple()[i]:
                     run = True
             else:
                 t = job['interval'] if job['failed'] == 0 else job['fail']
-                if job['last'] + t > ticks_in_seconds():
+                if ticks_in_seconds() > job['last'] + t:
                     run = True
             if run:
                 try:
-                    print('running job', job['job'].__name__)
+                    print('running job', str(job['job']).split(' ')[1])
                     res = job['job']()
                 except Exception as e:
                     print("job failed", str(e))  
@@ -77,7 +77,7 @@ def main():
                 
                 if not res:
                     job['failed'] += 1
-                    if job['failed'] >= job['max_failed']:
+                    if job['failed'] >= job['max_fail']:
                        error_code(job['error_code']) 
                        job['failed'] = 0
                 else:  
@@ -91,7 +91,7 @@ def main():
 
 def ticks_in_seconds():
     global TICK, ticks
-    return ticks / TICK
+    return ticks * TICK
 
 def sleep():
     global TICK, ticks
@@ -107,14 +107,16 @@ def date():
 
 def temperature():
     temp = getTemp()
-    setText(lblTemp, f'{int(abs(round(temp, 0))):0=2}')
-    setText(lblDot, '+' if temp >= 0.0 else '-')
-    return True
+    if temp:
+        setText(lblTemp, f'{int(abs(round(temp, 0))):0=2}')
+        setText(lblDot, '+' if temp >= 0.0 else '-')
+        return True
+    return False
 
 def now():
     date = datetime.now() 
     date += timedelta(hours = isEUDst(date))
-    return f'{(date.hour + isEUDst(date)):0=2}{date.minute:0=2}'
+    return date
 
 def hours():
     setText(lblTimeH, f'{now().hour:0=2}')
@@ -133,6 +135,7 @@ def isEUDst(date):
 
 def error_code(code):
     global CURRENT_ERROR
+    print('Error: ', code)
     if SHOWERROR == 1:
         setText(lblDate, f'  {code:0=3}   ')
         CURRENT_ERROR = code
@@ -152,14 +155,14 @@ def checkWifi():
             wifi.radio.connect(WIFI_SSID, WIFI_PASSWORD)
         except Exception as e:
             print('Wifi failed', str(e))
-            error_code(300 + i + 1, i * 3600 + 30)
+            error_code(999)
             time.sleep(i * 10 + 0.5)
 
     if not wifi.radio.connected:
         print("Resetting clock in 5 seconds")
-        error_code(401)
         time.sleep(5)
         microcontroller.reset()
+    clear_error(999)
 
 def getTemp():
     if DEBUG:
@@ -167,10 +170,11 @@ def getTemp():
     url = 'https://api.open-meteo.com/v1/forecast?latitude=' + \
            LATITUDE + '&longitude=' + LONGITUDE + '&current=temperature_2m'
     data = getJson(url)
-    return data['current']['temperature_2m']
+    if data:
+        return data['current']['temperature_2m']
+    return None
 
 def getJson(url):
-    data = {}
     checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
@@ -178,9 +182,10 @@ def getJson(url):
         response = requests.get(url)
         data = response.json()
         response.close()
+        return data
     except Exception as e:
         print("json failed", str(e))
-    return data
+    return None
 
 def initDisplay():
     global display
@@ -304,7 +309,7 @@ def initWidgets():
 def ntp():
     if DEBUG:
         rtc.RTC().datetime = time.struct_time((2020, 3, 27, 19, 10, 0, 0, -1, -1))
-        return True
+        return False
     checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
@@ -359,7 +364,7 @@ fonts = {
 
 CURRENT_ERROR = 0
 TICK = 0.5
-ticks = {'current': 0}
+ticks = 0
 HOUR_CHANGE = -3
 MIN_CHANGE = -4
 DAY_CHANGE = -2

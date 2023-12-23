@@ -1,6 +1,6 @@
 # Flash Clock
 
-Source code for Raspberry Pi based camera themed clock. 
+Source code for Raspberry Pi & 1.8" ST7735S 128x160 display based camera themed clock. 
 
 More info & images: link coming soon...
 

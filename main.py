@@ -179,7 +179,7 @@ def getJson(url):
     try:
         pool = socketpool.SocketPool(wifi.radio)
         requests = adafruit_requests.Session(pool, ssl.create_default_context())
-        response = requests.get(url)
+        response = requests.get(url, timeout = 3.0)
         data = response.json()
         response.close()
         return data

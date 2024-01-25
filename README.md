@@ -1,8 +1,10 @@
 # Flash Clock
 
-Source code for Raspberry Pi & 1.8" ST7735S 128x160 display based camera themed clock. 
+![Photography themed clock build inside flash](https://petridamsten.com/media/flash_clock.webp)
 
-More info & images: link coming soon...
+Source code, 3D print files and a font for Raspberry Pi & 1.8" ST7735S 128x160 display based photography themed clock that is build inside an old camera flash. 
+
+More info about building and images [in my blog](https://petridamsten.com/flash-clock/).
 
 ### Example config
 ```

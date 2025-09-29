@@ -7,3 +7,4 @@ SHOW_ERROR_CODES = 0          # Show error codes on screen
 SHOWDATE = 0                  # Show date on bottom
 DEBUG = 0                     # Debug mode (run without internet connection)
 BRIGHTNESS = 70               # Screen brightness
+NTP = "pool.ntp.org"          # ntp server

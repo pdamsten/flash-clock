@@ -313,7 +313,7 @@ def ntp():
     checkWifi()
     try:
         pool = socketpool.SocketPool(wifi.radio)
-        ntp = adafruit_ntp.NTP(pool, tz_offset = TIME_OFFSET)
+        ntp = adafruit_ntp.NTP(pool, server = NTP, tz_offset = TIME_OFFSET)
         rtc.RTC().datetime = ntp.datetime
         return True
     except Exception as e:
@@ -378,6 +378,7 @@ LATITUDE = os.getenv('WEATHER_LATITUDE', 51.4934)
 LONGITUDE = os.getenv('WEATHER_LONGITUDE', 0)
 TIME_OFFSET = int(os.getenv('TIME_OFFSET', 0))
 BRIGHTNESS = int(os.getenv('BRIGHTNESS', 100))
+NTP = os.getenv('NTP', 'pool.ntp.org')
 
 display = None 
 lblTimeH = None
